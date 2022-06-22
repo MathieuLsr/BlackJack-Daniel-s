@@ -174,6 +174,8 @@ JoueurStay = False
 main_en_cours = False
 nb_image_confetti = 0
 win = False
+isChangeBalance_Main = False
+isChangeBalance_Totale = False
 
 for i in range(len(cartes)) :
   carte = cartes[i] 
@@ -189,6 +191,7 @@ class ThreadClearCartes (threading.Thread):
       global main_joueur
       global main_croupier
       global MancheTerminee
+      global JoueurStay
       
       time.sleep(3)
       MancheTerminee = True
@@ -211,18 +214,29 @@ class ThreadChangeBalance (threading.Thread):
 
       loop = abs(self.montant)
       negative = 1 if self.montant >= 0 else -1
+
+      global isChangeBalance_Main
+      global isChangeBalance_Totale
       
       if self.typeBalance == typeEnum.TypeMontant.BalanceMainJoueur :
+        isChangeBalance_Main = True
         global balance_main_joueur
         for i in range(loop):
           balance_main_joueur += negative
           time.sleep(0.02)
 
       if self.typeBalance == typeEnum.TypeMontant.BalanceTotaleJoueur :
+        isChangeBalance_Totale = True
         global balance_totale_joueur
         for i in range(loop):
           balance_totale_joueur += negative
           time.sleep(0.02)
+
+      print(">> ", isChangeBalance_Main, ", ", isChangeBalance_Totale)
+
+      if self.typeBalance == typeEnum.TypeMontant.BalanceMainJoueur : isChangeBalance_Main = False
+      elif self.typeBalance == typeEnum.TypeMontant.BalanceTotaleJoueur : isChangeBalance_Totale = False
+
 
 
 class ThreadChangeCarte (threading.Thread):
@@ -263,25 +277,27 @@ class ThreadCroupierHit (threading.Thread):
         valeurCroupier = GetValeurMain(main_croupier) 
         valeurJoueur = GetValeurMain(main_joueur) 
 
+        bal_tempo = balance_main_joueur
+
         if valeurCroupier > 21 :
-          ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceMainJoueur, -balance_main_joueur)
-          ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceTotaleJoueur, balance_main_joueur*2)
+          ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceMainJoueur, -bal_tempo)
+          ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceTotaleJoueur, bal_tempo*2)
           win = True 
 
         elif valeurJoueur == 21 : 
           if valeurCroupier == 21 : 
-            ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceMainJoueur, -balance_main_joueur)
-            ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceTotaleJoueur, balance_main_joueur)
+            ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceMainJoueur, -bal_tempo)
+            ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceTotaleJoueur, bal_tempo)
           else :
-            ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceMainJoueur, -balance_main_joueur)
-            ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceTotaleJoueur, balance_main_joueur*2.5)
+            ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceMainJoueur, -bal_tempo)
+            ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceTotaleJoueur, bal_tempo*2.5)
             win = True
           
         elif valeurCroupier >= valeurJoueur :
-          ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceMainJoueur, -balance_main_joueur)
+          ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceMainJoueur, -bal_tempo)
         
         else :
-          ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceTotaleJoueur, balance_main_joueur*2)
+          ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceTotaleJoueur, bal_tempo*2)
           win = True 
           
         main_en_cours = False 
@@ -302,6 +318,21 @@ def GiveCard(typeJoueur, carte, time):
 
       
 def ChangeBalanceMainJoueur(montant, typeBalance) :
+
+  global isChangeBalance_Main
+  global isChangeBalance_Totale
+
+  #print(typeEnum.TypeMontant.BalanceMainJoueur == typeEnum.TypeMontant.BalanceMainJoueur)
+  #print(typeBalance == typeEnum.TypeMontant.BalanceMainJoueur)
+  #print(typeBalance == typeEnum.TypeMontant.BalanceTotaleJoueur)
+
+  print(isChangeBalance_Main, " ", montant == typeEnum.TypeMontant.BalanceMainJoueur)
+  print(isChangeBalance_Totale, " ", montant == typeEnum.TypeMontant.BalanceTotaleJoueur) 
+
+  if isChangeBalance_Main and montant == typeEnum.TypeMontant.BalanceMainJoueur : return 
+  if isChangeBalance_Totale and montant == typeEnum.TypeMontant.BalanceTotaleJoueur : return 
+  
+  #print(montant, ", ",typeBalance, ", ", isChangeBalance_Main, ", ", isChangeBalance_Totale)
   ThreadChangeBalance(montant, typeBalance).start()
 
 
@@ -420,8 +451,9 @@ def main() -> int:
     if button_reset.draw(screen) :
       button.state = 0 
       if not main_en_cours :
-        ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceTotaleJoueur, balance_main_joueur)
-        ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceMainJoueur, -balance_main_joueur)
+        bal_tempo = balance_main_joueur
+        ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceTotaleJoueur, bal_tempo)
+        ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceMainJoueur, -bal_tempo)
         #balance_totale_joueur += balance_main_joueur
         #balance_main_joueur = 0 
 
