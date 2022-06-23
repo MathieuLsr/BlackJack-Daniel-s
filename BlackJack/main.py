@@ -96,10 +96,10 @@ clock = pygame.time.Clock()
 
 
 cartes = [
-  ["as_coeur.png", 1, None],
+  ["as_coeur.png", 11, None],
   ["as_pique.png", 1, None],
   ["as_trefle.png", 1, None],
-  ["as_carreau.png", 1, None],
+  ["as_carreau.png", 11, None],
 
   ["deux_coeur.png", 2, None],
   ["deux_pique.png", 2, None],
@@ -279,19 +279,19 @@ class ThreadCroupierHit (threading.Thread):
 
         bal_tempo = balance_main_joueur
 
-        if valeurCroupier > 21 :
-          ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceMainJoueur, -bal_tempo)
-          ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceTotaleJoueur, bal_tempo*2)
-          win = True 
-
-        elif valeurJoueur == 21 : 
+        if valeurJoueur == 21 : 
           if valeurCroupier == 21 : 
             ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceMainJoueur, -bal_tempo)
             ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceTotaleJoueur, bal_tempo)
           else :
             ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceMainJoueur, -bal_tempo)
-            ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceTotaleJoueur, bal_tempo*2.5)
+            ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceTotaleJoueur, bal_tempo*3)
             win = True
+
+        elif valeurCroupier > 21 :
+          ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceMainJoueur, -bal_tempo)
+          ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceTotaleJoueur, bal_tempo*2)
+          win = True 
           
         elif valeurCroupier >= valeurJoueur :
           ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceMainJoueur, -bal_tempo)
@@ -439,18 +439,19 @@ def main() -> int:
     
 
     if button_stay.draw(screen) :
-      JoueurStay = True
-      thrd = ThreadCroupierHit(False)
-      thrd.start()
-      #thrd.join() # peut pas attendre vu que les frames s'arrêtent
-      
+      if main_en_cours :
+        JoueurStay = True
+        thrd = ThreadCroupierHit(False)
+        thrd.start()
+        #thrd.join() # peut pas attendre vu que les frames s'arrêtent
+        
 
     
 
 
     if button_reset.draw(screen) :
-      button.state = 0 
       if not main_en_cours :
+        button.state = 0 
         bal_tempo = balance_main_joueur
         ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceTotaleJoueur, bal_tempo)
         ChangeBalanceMainJoueur(typeEnum.TypeMontant.BalanceMainJoueur, -bal_tempo)
@@ -485,6 +486,9 @@ def main() -> int:
     for jeton in jetons :
 
       if jeton[0].draw(screen):
+
+        if main_en_cours : continue 
+
         if button.state == 0 : button.state += 1
         if balance_totale_joueur - jeton[1] < 0 :
           balance_main_joueur += balance_totale_joueur
